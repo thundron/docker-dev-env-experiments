@@ -1,0 +1,36 @@
+version: '2'
+services:
+  ui:
+    build: ./ui
+    restart: always
+    ports:
+      - "5000:5000"
+  server:
+    build: ./server
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      POSTGRES_DATABASE_URL: postgres://speedtest:speedtestqq@postgres:5432/db
+      NODE_ENV: production
+      SPEEDTEST_SERVER_PORT: 3000
+  db:
+    image: postgres
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "speedtest" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: speedtest
+      POSTGRES_PASSWORD: speedtestqq
+      POSTGRES_DB: db
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/
