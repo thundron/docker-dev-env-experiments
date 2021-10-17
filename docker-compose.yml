@@ -3,7 +3,7 @@ services:
   ui:
     depends_on:
       - server
-    container_name: speedtest-ui-prod
+    container_name: speedtest-ui-production
     build: ./ui
     restart: always
     ports:
@@ -13,14 +13,14 @@ services:
   server:
     depends_on:
       - db
-    container_name: speedtest-server-prod
+    container_name: speedtest-server-production
     build: ./server
     restart: always
     ports:
       - "3000:3000"
     env_file: ./server/.env.production
   db:
-    container_name: speedtest-db-prod
+    container_name: speedtest-db-production
     image: postgres
     restart: always
     ports:
@@ -31,4 +31,4 @@ services:
         max-size: 10m
         max-file: "3"
     volumes:
-      - ./db:/docker-entrypoint-initdb.d/
+      - ./db/init:/docker-entrypoint-initdb.d/

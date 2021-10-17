@@ -4,7 +4,7 @@ services:
     extends:
       file: docker-compose.yml
       service: ui
-    container_name: speedtest-ui-dev
+    container_name: speedtest-ui-development
     build:
       context: ./ui
       target: build
@@ -16,7 +16,7 @@ services:
     extends:
       file: docker-compose.yml
       service: server
-    container_name: speedtest-server-dev
+    container_name: speedtest-server-development
     build:
       context: ./server
       target: build
@@ -28,6 +28,6 @@ services:
     extends:
       file: docker-compose.yml
       service: db
-    container_name: speedtest-db-dev
+    container_name: speedtest-db-development
     env_file:
       - ./db/.env.development
