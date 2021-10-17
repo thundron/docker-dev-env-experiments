@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Helmet } from 'react-helmet-async';
 import {
   Button,
-  Card,
+  Card as CardBase,
   CardContent,
   Container,
   CssBaseline,
@@ -10,14 +10,21 @@ import {
   FormHelperText,
   Input,
   MenuItem,
-  Select as RawSelect,
+  Select as SelectBase,
   Typography,
 } from '@mui/material';
 import { Box, styled } from '@mui/system';
 import { FormEvent } from 'hoist-non-react-statics/node_modules/@types/react';
 
-const Select = styled(RawSelect)`
-  border: none;
+const environment = (process.env.NODE_ENV || 'production').toLowerCase();
+const SERVER_PORT = '3000';
+
+const Card = styled(CardBase)`
+  border-color: #f6f6f6;
+`;
+
+const Select = styled(SelectBase)`
+  border-color: #fafafa;
 `;
 
 type URLInfo =
@@ -28,7 +35,15 @@ type URLInfo =
       path: string;
       status: string;
       statusCode: number;
-      responses: Response[];
+      server: string;
+      date: string;
+      redirectedFrom?: {
+        status: string;
+        statusCode: number;
+        path: string;
+        date: string;
+        server: string;
+      };
     };
 
 type Method = 'get' | 'post' | 'put' | 'delete';
@@ -36,11 +51,19 @@ type Method = 'get' | 'post' | 'put' | 'delete';
 const methods: Method[] = ['get', 'post', 'put', 'delete'];
 
 const getUrlInfo = (url: URL, method: Method) => {
-  console.log(url.toString());
-  return fetch(url.toString(), {
-    method,
-    mode: 'cors',
-  });
+  return fetch(
+    `http://speedtest-server-${environment}:${SERVER_PORT}/get-url-info`,
+    {
+      method: 'POST',
+      mode: 'cors',
+      cache: 'no-cache',
+      body: new URLSearchParams({
+        url: url.toString(),
+        method,
+      }),
+      redirect: 'manual',
+    },
+  );
 };
 
 const URLStatusInfo = ({ urlInfo }: { urlInfo: URLInfo }) => {
@@ -60,7 +83,7 @@ const URLStatusInfo = ({ urlInfo }: { urlInfo: URLInfo }) => {
   );
 };
 
-const DEFAULT_URL = 'http://localhost:3000';
+const DEFAULT_URL = 'http://localhost:3000/example';
 
 export const HomePage = () => {
   const [urlInfo, setUrlInfo] = React.useState<URLInfo>();
@@ -88,16 +111,9 @@ export const HomePage = () => {
     }
 
     try {
-      const info = await getUrlInfo(url, method);
-      console.log(info);
-      setUrlInfo({
-        domain: url.hostname,
-        scheme: url.protocol,
-        path: url.pathname,
-        status: info.statusText,
-        statusCode: info.status,
-        responses: [info],
-      });
+      const infoRaw = await getUrlInfo(url, method);
+      const infoJson = await infoRaw.json();
+      setUrlInfo(infoJson);
     } catch (error) {
       console.error(error);
     }
@@ -135,7 +151,8 @@ export const HomePage = () => {
               size="small"
               sx={{
                 marginRight: 2,
-                backgroundColor: '#f6f6f6',
+                backgroundColor: '#fafafa',
+                borderColor: '#fafafa',
               }}
             >
               {methods.map(method => (
@@ -166,30 +183,68 @@ export const HomePage = () => {
             <Box
               sx={{
                 display: 'flex',
+                mt: 2,
                 flexDirection: 'row',
               }}
             >
               <Card
                 variant="outlined"
-                sx={{ minWidth: 275, backgroundColor: '#e9e9e9' }}
+                sx={{ width: 250, mr: 1, backgroundColor: '#f6f6f6' }}
               >
-                <CardContent>
+                <CardContent sx={{ p: 1 }}>
                   <Typography>URL INFO</Typography>
+                  <Box sx={{ backgroundColor: '#e9e9e9', mt: 1, p: 1 }}>
+                    <Typography variant="h6">DOMAIN</Typography>
+                    <Typography>{urlInfo.domain}</Typography>
+                  </Box>
+                  <Box sx={{ backgroundColor: '#e9e9e9', mt: 1, p: 1 }}>
+                    <Typography variant="h6">SCHEME</Typography>
+                    <Typography>{urlInfo.scheme}</Typography>
+                  </Box>
+                  <Box sx={{ backgroundColor: '#e9e9e9', mt: 1, p: 1 }}>
+                    <Typography variant="h6">PATH</Typography>
+                    <Typography>{urlInfo.path}</Typography>
+                  </Box>
                 </CardContent>
               </Card>
-              {urlInfo.responses.map(response => (
-                <Card
-                  key={response.url}
-                  variant="outlined"
-                  sx={{ minWidth: 275 }}
-                >
-                  <CardContent>
-                    <Typography>
-                      {response.status} - {response.statusText}
-                    </Typography>
+              {urlInfo.redirectedFrom && (
+                <Card variant="outlined" sx={{ width: 250 }}>
+                  <CardContent sx={{ p: 1 }}>
+                    <Typography>RESPONSE</Typography>
+                    <Box sx={{ backgroundColor: '#f6f6f6', mt: 1, p: 1 }}>
+                      <Typography>
+                        {urlInfo.scheme} {urlInfo.redirectedFrom.statusCode}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ backgroundColor: '#f6f6f6', mt: 1, p: 1 }}>
+                      <Typography>
+                        Location: {urlInfo.redirectedFrom.path}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ backgroundColor: '#f6f6f6', mt: 1, p: 1 }}>
+                      <Typography>
+                        Server: {urlInfo.redirectedFrom.server}
+                      </Typography>
+                    </Box>
                   </CardContent>
                 </Card>
-              ))}
+              )}
+              <Card variant="outlined" sx={{ width: 250 }}>
+                <CardContent sx={{ p: 1 }}>
+                  <Typography>RESPONSE</Typography>
+                  <Box sx={{ backgroundColor: '#f6f6f6', mt: 1, p: 1 }}>
+                    <Typography>
+                      {urlInfo.scheme} {urlInfo.statusCode} {urlInfo.status}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ backgroundColor: '#f6f6f6', mt: 1, p: 1 }}>
+                    <Typography>Date: {urlInfo.date}</Typography>
+                  </Box>
+                  <Box sx={{ backgroundColor: '#f6f6f6', mt: 1, p: 1 }}>
+                    <Typography>Server: {urlInfo.server}</Typography>
+                  </Box>
+                </CardContent>
+              </Card>
             </Box>
           )}
         </Box>

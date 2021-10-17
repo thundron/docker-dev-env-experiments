@@ -9,7 +9,6 @@ COPY yarn.lock ./
 RUN yarn
 
 # build project
-COPY internals ./internals
 COPY public ./public
 COPY src ./src
 COPY tsconfig.json .eslintrc.js .prettierrc .prettierignore .babel-plugin-macrosrc.js ./
