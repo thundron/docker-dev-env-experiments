@@ -1,20 +1,30 @@
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import csrf from 'csurf';
 import express from 'express';
 import { deleteURL, getURL as get, getURLs, insertURL as set, updateURL } from './database';
 import request from 'axios';
 import { platform } from 'os';
+import rateLimit from 'express-rate-limit';
 
 const PORT = parseInt(process.env.SPEEDTEST_SERVER_PORT || '3000');
 
 const app = express();
+
+const limiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 100,
+  message: 'Too many requests. Please try again in 5 minutes.',
+});
 
 app.use(cors());
 app.use(cookieParser());
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended:true }));
+app.use(csrf({ cookie: { httpOnly: true } }));
+app.use(limiter);
 
 export type Method = 'get' | 'post' | 'put' | 'delete';
 
@@ -27,6 +37,7 @@ const methods: Method[] = [
 
 app.post('/get-url-info', async (req, res) => {
   try {
+    console.log('req.csrfToken()', req.csrfToken());
     const urlResponse = await request({
       url: req.body.url,
       method: req.body.method,
@@ -111,20 +122,21 @@ methods.forEach((method) => {
     }
     try {
       jsonData = JSON.parse(jsonParam);
+      let data;
       if (method === 'get') {
-        await getEndpoint(jsonData);
+        data = await getEndpoint(jsonData);
       } else if (method === 'post') {
-        await postEndpoint(method, jsonData);
+        data = await postEndpoint(method, jsonData);
       } else if (method === 'put') {
-        await putEndpoint(jsonData);
+        data = await putEndpoint(jsonData);
       } else if (method === 'delete') {
-        await deleteEndpoint(jsonData);
+        data = await deleteEndpoint(jsonData);
       }
-      res.send('NO');
+      res.status(200);
+      res.send(data);
     } catch (error: any) {
       res.status(400);
       res.send(error.message);
-      return;
     }
   });
 

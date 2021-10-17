@@ -57,6 +57,7 @@ const getUrlInfo = (url: URL, method: Method) => {
       method: 'POST',
       mode: 'cors',
       cache: 'no-cache',
+      credentials: 'same-origin',
       body: new URLSearchParams({
         url: url.toString(),
         method,
@@ -112,6 +113,8 @@ export const HomePage = () => {
 
     try {
       const infoRaw = await getUrlInfo(url, method);
+      console.log(infoRaw);
+      console.log(await infoRaw.text());
       const infoJson = await infoRaw.json();
       setUrlInfo(infoJson);
     } catch (error) {
