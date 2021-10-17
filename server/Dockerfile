@@ -3,6 +3,8 @@ FROM node:14 as build
 
 WORKDIR /usr/src/app/
 
+ENV CI=true
+
 # install project dependencies
 COPY package.json ./
 COPY yarn.lock ./
@@ -12,6 +14,8 @@ RUN yarn
 COPY src ./src
 COPY tsconfig.json ./
 RUN yarn run build
+
+CMD yarn run serve
 
 # use build only
 FROM node:14 as runtime

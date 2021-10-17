@@ -1,33 +1,31 @@
 version: '2'
 services:
   ui:
+    depends_on:
+      - server
+    container_name: speedtest-ui-prod
     build: ./ui
     restart: always
     ports:
       - "5000:5000"
+    environment:
+      NODE_ENV: production
   server:
+    depends_on:
+      - db
+    container_name: speedtest-server-prod
     build: ./server
     restart: always
     ports:
       - "3000:3000"
-    environment:
-      POSTGRES_DATABASE_URL: postgres://speedtest:speedtestqq@postgres:5432/db
-      NODE_ENV: production
-      SPEEDTEST_SERVER_PORT: 3000
+    env_file: ./server/.env.production
   db:
+    container_name: speedtest-db-prod
     image: postgres
-    healthcheck:
-      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "speedtest" ]
-      timeout: 45s
-      interval: 10s
-      retries: 10
     restart: always
     ports:
       - "5432:5432"
-    environment:
-      POSTGRES_USER: speedtest
-      POSTGRES_PASSWORD: speedtestqq
-      POSTGRES_DB: db
+    env_file: ./db/.env.production
     logging:
       options:
         max-size: 10m

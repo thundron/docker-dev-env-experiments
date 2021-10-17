@@ -1,0 +1,33 @@
+version: '2'
+services:
+  ui:
+    extends:
+      file: docker-compose.yml
+      service: ui
+    container_name: speedtest-ui-dev
+    build:
+      context: ./ui
+      target: build
+    env_file:
+      - ./ui/.env.development
+    volumes:
+      - ./ui:/usr/src/app
+  server:
+    extends:
+      file: docker-compose.yml
+      service: server
+    container_name: speedtest-server-dev
+    build:
+      context: ./server
+      target: build
+    env_file:
+      - ./server/.env.development
+    volumes:
+      - ./server:/usr/src/app
+  db:
+    extends:
+      file: docker-compose.yml
+      service: db
+    container_name: speedtest-db-dev
+    env_file:
+      - ./db/.env.development
