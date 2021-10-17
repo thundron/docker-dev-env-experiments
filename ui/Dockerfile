@@ -9,10 +9,13 @@ COPY yarn.lock ./
 RUN yarn
 
 # build project
-COPY src ./src
+COPY internals ./internals
 COPY public ./public
-COPY tsconfig.json .eslintrc.js babel.config.js ./
+COPY src ./src
+COPY tsconfig.json .eslintrc.js .prettierrc .prettierignore .babel-plugin-macrosrc.js ./
 RUN yarn run build
+
+CMD yarn start
 
 # use build only
 FROM node:14 as runtime
@@ -21,6 +24,6 @@ RUN npm i -g serve
 
 WORKDIR /usr/src/app
 
-COPY --from=build /usr/src/app/dist ./dist
+COPY --from=build /usr/src/app/build ./dist
 
 CMD serve -s /usr/src/app/dist
